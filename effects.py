@@ -52,14 +52,16 @@ class Wipe(Effect):
         self.clearBuffer()
         for i in range(self.trail):
             if self.direction:
-                #debate on whether this minus one should be here, either it has an empty frame for a few frames or the last frame is the end of the tail at the end
-                pos = int(((self.length * 3 + self.trail * 3)//self.duration * 3) * self.counter) - i * 3
+                #TODO fix bug where the effect doesn't finish
+                pos = int(((self.length + self.trail)//self.duration) * self.counter)* 3 - i * 3
                 if pos >= 0 and pos < (self.length - 1) * 3:
-                    print(pos)
+                    #print(pos)
                     self.buffer[pos] = int(self.calculateBrightness(i) * self.color[0])
                     self.buffer[pos + 1] = int(self.calculateBrightness(i) * self.color[1])
                     self.buffer[pos + 2] = int(self.calculateBrightness(i) * self.color[2])
         self.counter += 1
+        print(self.counter)
+        #TODO: fix issue with this timing in pos line
         if self.counter == self.duration:
             self.status = True
     
@@ -68,7 +70,7 @@ class Wipe(Effect):
         return
 
 trans = Transmitter("192.168.1.134", 300)
-eff = Wipe(trans, 0, 300, 50, (255, 255, 255), True, 400)
+eff = Wipe(trans, 0, 300, 1, (255, 255, 255), True, 100)
 while(eff.status != True):
     eff.generateFrame()
     eff.transmit()

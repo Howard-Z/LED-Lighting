@@ -34,13 +34,13 @@ class Transmitter():
         data = converter(raw)
         #self.sacn.start()
         for i in range(1, self.num_univ + 1):
-            print("Universe {}".format(i))
+            #print("Universe {}".format(i))
             try:
                 self.sacn.activate_output(i)
                 self.sacn[i].multicast = False
                 self.sacn[i].destination = self.ip
                 chunk = [data[j : j + 510] for j in range(0, len(data), 510)][i - 1]
-                print(chunk)
+                #print(chunk)
                 self.sacn[i].dmx_data = chunk
             except:
                 continue
