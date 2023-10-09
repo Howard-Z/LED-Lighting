@@ -1,5 +1,7 @@
-import json
-import requests
+import numpy as np
+from transmitter import Transmitter
+
+
 
 # There are 2 approaches we can take for handling simultaneous events
 # One: we could make every effect a class and store the current state (frame) of each effect and just tick up the frames until done
@@ -8,73 +10,66 @@ import requests
 # Two: We could use multithreading where it waits for events and set
 # Ex: event = threading.Event()             event.set()
 
-def intToHexStr(num):
-    num = hex(num)
-    num = str(num)[2:]
-    for i in range (6 - len(num)):
-        num += "0"
-    return num
 
+
+# This class takes in a transmitter object (so that the buffer knows where to get written to)
 class Effect():
-    def __init__(self, ip):
-        self.ip = ip
+    def __init__(self, transmitter):
         self.status = False
         self.counter = 0
+        self.transmitter = transmitter
 
     def generateFrame(self):
         raise NotImplementedError
 
 
     def transmit(self, data):
-        temp = {"seg":{"i":data}}
-        print(temp)
-        response = requests.post(
-            f"http://{self.ip}/json",
-            data=json.dumps(temp),
-            headers={"Content-Type": "application/json"},
-        )
-        # Check if the request was successful
-        if response.status_code != 200:
-            print("Failed to toggle WLED power")
+        # we are going to assume that the input data will be an array of ints [r_1, g_1, b_1, r_2, g_2, b_2, ...]
+        self.transmitter.transmit(tuple(data), .025)
 
 class Wipe(Effect):
     # This effect was meant for 1D strips
     # Does a wipe effect with a start pixel, end pixel, trail length, direction (left or right), and duration in frames
-    def __init__(self, ip, start, stop, trail, direction, duration):
-        super().__init__(ip)
+    def __init__(self, transmitter, start, stop, trail, color, direction, duration):
+        super().__init__(transmitter)
         self.start = start
         self.stop = stop
         self.length = stop - start
         self.trail = trail
         self.direction = direction
         self.duration = duration
+        self.color = color
         #this is temp for testing
-        self.buffer = [0] * (stop - start)
+        self.buffer = np.zeros((self.stop - self.start)*3, dtype=np.ubyte)
 
     def clearBuffer(self):
-        for i in range(len(self.buffer)):
-            self.buffer[i] = intToHexStr(0)
+        self.buffer.fill(0)
 
     def calculateBrightness(self, index):
-        return 1 - (1.0/self.trail) * index
+        return ((1.0/self.trail) * (self.trail - index))
 
     def generateFrame(self):
         self.clearBuffer()
         for i in range(self.trail):
             if self.direction:
                 #debate on whether this minus one should be here, either it has an empty frame for a few frames or the last frame is the end of the tail at the end
-                pos = (self.length + self.trail - 1)/self.duration * self.counter - i
-                if pos >= 0 and pos < self.length:
-                    #This is really stupid and should only be used in testing
-                    hexnum = int(self.calculateBrightness(i) * 100)
-                    self.buffer[int(pos)] = intToHexStr(hexnum)
+                pos = int(((self.length * 3 + self.trail * 3)//self.duration * 3) * self.counter) - i * 3
+                if pos >= 0 and pos < (self.length - 1) * 3:
+                    print(pos)
+                    self.buffer[pos] = int(self.calculateBrightness(i) * self.color[0])
+                    self.buffer[pos + 1] = int(self.calculateBrightness(i) * self.color[1])
+                    self.buffer[pos + 2] = int(self.calculateBrightness(i) * self.color[2])
         self.counter += 1
         if self.counter == self.duration:
             self.status = True
+    
     def transmit(self):
-        return super().transmit(self.buffer)
+        super().transmit(self.buffer)
+        return
 
-# eff = Wipe("192.168.1.121", 0, 329, 5, True, 100)
-# while eff.status != True:
-#     eff.generateFrame()
-#     print(eff.buffer)
+trans = Transmitter("192.168.1.134", 300)
+eff = Wipe(trans, 0, 300, 50, (255, 255, 255), True, 400)
+while(eff.status != True):
+    eff.generateFrame()
+    eff.transmit()
+trans.stop()

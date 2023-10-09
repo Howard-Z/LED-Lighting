@@ -1,46 +1,54 @@
-import requests
-import json
-from sandbox import *
 import time
-# Replace these with your WLED device's information
-wled_ip = "192.168.1.121"  # Replace with your WLED device's IP address
+import sacn
 
-# URL for the WLED JSON API
-api_url = f"http://{wled_ip}/json"
+def converter(data):
+    return tuple(i.item() for i in data)
 
-# Create a dictionary to toggle the power state
-power_toggle = {
-    "on": {
-        "on": True
-    },
-    "off": {
-        "on": False
-    }
-}
+class Transmitter():
+    def __init__(self, ip, num_leds):
+        self.ip = ip
+        self.num_leds = num_leds
+        self.num_univ = self.num_leds // 170 + 1
+        self.sacn = sacn.sACNsender()
+        self.start()
 
-# Function to toggle WLED on or off
-def toggle_wled_power(state):
-    try:
-        # Send a POST request to change the power state
-        eff = Effect("192.168.1.121")
-        eff.transmit(state)
-        #data=json.dumps(state)
+    # def transmit(self, data):
+    #     self.sacn.start()
+    #     for i in range(1, self.num_univ):
+    #         try:
+    #             self.sacn.activate_output(i)
+    #             self.sacn[i].multicast = False
+    #             self.sacn[i].destination = self.ip
+    #             chunk = [data[j : j + 170] for j in range(0, len(data), 170)][i - 1]
+    #             print(chunk)
+    #             self.sacn[i].dmx_data = chunk
+    #         except:
+    #             continue
+    #     self.sacn.stop()
 
+    # This function takes in self, data and duration
+    # data: This is a tuple of integers 0-255 inclusive of length n
+    # duration: This is the time in between each frame
+    # TODO: convert this to use manual flush and lock at fixed fps
+    def transmit(self, raw, duration):
+        data = converter(raw)
+        #self.sacn.start()
+        for i in range(1, self.num_univ + 1):
+            print("Universe {}".format(i))
+            try:
+                self.sacn.activate_output(i)
+                self.sacn[i].multicast = False
+                self.sacn[i].destination = self.ip
+                chunk = [data[j : j + 510] for j in range(0, len(data), 510)][i - 1]
+                print(chunk)
+                self.sacn[i].dmx_data = chunk
+            except:
+                continue
+        time.sleep(duration)
+        #self.sacn.stop()
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
+    def start(self):
+        self.sacn.start()
 
-# Toggle WLED on
-toggle_wled_power(power_toggle["on"])
-
-# Toggle WLED off
-#toggle_wled_power(power_toggle["off"])
-
-# test = {"seg":{"i":["FF0000"]}}
-# toggle_wled_power(test)
-
-eff = Wipe("192.168.1.121", 0, 329, 10, True, 200)
-while(eff.status != True):
-    eff.generateFrame()
-    eff.transmit()
-    time.sleep(1/2)
+    def stop(self):
+        self.sacn.stop()
