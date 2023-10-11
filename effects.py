@@ -1,6 +1,6 @@
 import numpy as np
 from transmitter import Transmitter
-
+import time
 
 
 # There are 2 approaches we can take for handling simultaneous events
@@ -25,7 +25,7 @@ class Effect():
 
     def transmit(self, data):
         # we are going to assume that the input data will be an array of ints [r_1, g_1, b_1, r_2, g_2, b_2, ...]
-        self.transmitter.transmit(tuple(data), .025)
+        self.transmitter.transmit(tuple(data), .0304)
 
 class Wipe(Effect):
     # This effect was meant for 1D strips
@@ -40,7 +40,8 @@ class Wipe(Effect):
         self.duration = duration
         self.color = color
         #this is temp for testing
-        self.buffer = np.zeros((self.stop - self.start)*3, dtype=np.ubyte)
+        self.buffer = np.zeros((self.stop - self.start + self.trail)*3, dtype=np.ubyte)
+        #self.buffer = np.zeros((self.stop - self.start)*3, dtype=np.ubyte)
 
     def clearBuffer(self):
         self.buffer.fill(0)
@@ -50,28 +51,38 @@ class Wipe(Effect):
 
     def generateFrame(self):
         self.clearBuffer()
+        pos2 = int(((self.length + self.trail) * 3/self.duration) * self.counter)
+        pos2 = pos2 - (pos2 % 3)
         for i in range(self.trail):
             if self.direction:
-                #TODO fix bug where the effect doesn't finish
-                pos = int(((self.length + self.trail)//self.duration) * self.counter)* 3 - i * 3
-                if pos >= 0 and pos < (self.length - 1) * 3:
-                    #print(pos)
+                #had a really weird bug that was causing problems so this pos = pos2 thing is here
+                pos = pos2 - i * 3
+                
+                #THESE TWO LINES DO THE SAME THING???
+                #pos = ((self.length) * 3//self.duration) * self.counter - i * 3
+                #print(pos)
+                if pos >= 0 and pos < ((self.length + self.trail) * 3) - 1:
                     self.buffer[pos] = int(self.calculateBrightness(i) * self.color[0])
                     self.buffer[pos + 1] = int(self.calculateBrightness(i) * self.color[1])
                     self.buffer[pos + 2] = int(self.calculateBrightness(i) * self.color[2])
-        self.counter += 1
-        print(self.counter)
-        #TODO: fix issue with this timing in pos line
         if self.counter == self.duration:
             self.status = True
+        self.counter += 1
+        #print(self.counter)
+        #TODO: fix issue with this timing in pos line
+        
     
     def transmit(self):
         super().transmit(self.buffer)
         return
 
+
 trans = Transmitter("192.168.1.134", 300)
-eff = Wipe(trans, 0, 300, 1, (255, 255, 255), True, 100)
+eff = Wipe(trans, 0, 300, 100, (255, 255, 255), True, 600)
+start_time = time.time()
 while(eff.status != True):
     eff.generateFrame()
+    #print("tick")
     eff.transmit()
+print("--- %s seconds ---" % (time.time() - start_time))
 trans.stop()
