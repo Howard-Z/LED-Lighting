@@ -1,5 +1,7 @@
 import time
 import sacn
+from buffer import Buffer
+import numpy as np
 
 def converter(data):
     return tuple(i.item() for i in data)
@@ -10,28 +12,16 @@ class Transmitter():
         self.num_leds = num_leds
         self.num_univ = self.num_leds // 170 + 1
         self.sacn = sacn.sACNsender()
+        self.buffer = Buffer(num_leds)
+        self.eff_q = []
         self.start()
-
-    # def transmit(self, data):
-    #     self.sacn.start()
-    #     for i in range(1, self.num_univ):
-    #         try:
-    #             self.sacn.activate_output(i)
-    #             self.sacn[i].multicast = False
-    #             self.sacn[i].destination = self.ip
-    #             chunk = [data[j : j + 170] for j in range(0, len(data), 170)][i - 1]
-    #             print(chunk)
-    #             self.sacn[i].dmx_data = chunk
-    #         except:
-    #             continue
-    #     self.sacn.stop()
 
     # This function takes in self, data and duration
     # data: This is a tuple of integers 0-255 inclusive of length n
     # duration: This is the time in between each frame
     # TODO: convert this to use manual flush and lock at fixed fps
-    def transmit(self, raw, duration):
-        data = converter(raw)
+    def transmit(self):
+        data = converter(self.buffer.buff)
         #self.sacn.start()
         for i in range(1, self.num_univ + 1):
             #print("Universe {}".format(i))
@@ -44,7 +34,7 @@ class Transmitter():
                 self.sacn[i].dmx_data = chunk
             except:
                 continue
-        time.sleep(duration)
+        time.sleep(.0304)
         #self.sacn.stop()
 
     def start(self):
@@ -52,3 +42,16 @@ class Transmitter():
 
     def stop(self):
         self.sacn.stop()
+
+    def add_eff(self, effect):
+        self.eff_q.append(effect)
+
+    def gen_buff(self):
+        self.buffer.buff_clear()
+        if(len(self.eff_q) == 0):
+            return False
+        for eff in self.eff_q:
+            if eff:
+                self.buffer.buff = np.add(self.buffer.buff, eff.generateFrame())
+            else:
+                self.eff_q.remove(eff)

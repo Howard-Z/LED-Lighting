@@ -25,7 +25,8 @@ class Effect():
 
     def transmit(self, data):
         # we are going to assume that the input data will be an array of ints [r_1, g_1, b_1, r_2, g_2, b_2, ...]
-        self.transmitter.transmit(tuple(data), .0304)
+        self.transmitter.transmit(tuple(data))
+
 
 class Wipe(Effect):
     # This effect was meant for 1D strips
@@ -39,9 +40,9 @@ class Wipe(Effect):
         self.direction = direction
         self.duration = duration
         self.color = color
-        #this is temp for testing
+
         self.buffer = np.zeros((self.stop - self.start + self.trail)*3, dtype=np.ubyte)
-        #self.buffer = np.zeros((self.stop - self.start)*3, dtype=np.ubyte)
+
 
     def clearBuffer(self):
         self.buffer.fill(0)
@@ -57,10 +58,6 @@ class Wipe(Effect):
             if self.direction:
                 #had a really weird bug that was causing problems so this pos = pos2 thing is here
                 pos = pos2 - i * 3
-                
-                #THESE TWO LINES DO THE SAME THING???
-                #pos = ((self.length) * 3//self.duration) * self.counter - i * 3
-                #print(pos)
                 if pos >= 0 and pos < ((self.length + self.trail) * 3) - 1:
                     self.buffer[pos] = int(self.calculateBrightness(i) * self.color[0])
                     self.buffer[pos + 1] = int(self.calculateBrightness(i) * self.color[1])
@@ -68,21 +65,8 @@ class Wipe(Effect):
         if self.counter == self.duration:
             self.status = True
         self.counter += 1
-        #print(self.counter)
-        #TODO: fix issue with this timing in pos line
-        
+        return self.buffer[:self.length * 3:]
     
     def transmit(self):
         super().transmit(self.buffer)
         return
-
-
-trans = Transmitter("192.168.1.134", 300)
-eff = Wipe(trans, 0, 300, 100, (255, 255, 255), True, 600)
-start_time = time.time()
-while(eff.status != True):
-    eff.generateFrame()
-    #print("tick")
-    eff.transmit()
-print("--- %s seconds ---" % (time.time() - start_time))
-trans.stop()
