@@ -1,5 +1,5 @@
 import numpy as np
-from transmitter import Transmitter
+#from transmitter import Transmitter
 import time
 
 
@@ -52,8 +52,15 @@ class Wipe(Effect):
 
     def generateFrame(self):
         self.clearBuffer()
-        pos2 = int(((self.length + self.trail) * 3/self.duration) * self.counter)
-        pos2 = pos2 - (pos2 % 3)
+        pos2 = 0
+        print(self.counter)
+        if self.direction:
+            pos2 = int(((self.length + self.trail) * 3/self.duration) * self.counter)
+            pos2 = pos2 - (pos2 % 3)
+            #print(pos2)
+        else:
+            pos2 = self.length - int(((self.length + self.trail) * 3/self.duration) * self.counter)
+            #print(pos2)
         for i in range(self.trail):
             if self.direction:
                 #had a really weird bug that was causing problems so this pos = pos2 thing is here
@@ -62,7 +69,13 @@ class Wipe(Effect):
                     self.buffer[pos] = int(self.calculateBrightness(i) * self.color[0])
                     self.buffer[pos + 1] = int(self.calculateBrightness(i) * self.color[1])
                     self.buffer[pos + 2] = int(self.calculateBrightness(i) * self.color[2])
-        if self.counter == self.duration:
+            else:
+                pos = pos2 + i * 3
+                if pos >= 0 and pos < ((self.length + self.trail) * 3) - 1:
+                    self.buffer[pos] = int(self.calculateBrightness(i) * self.color[0])
+                    self.buffer[pos + 1] = int(self.calculateBrightness(i) * self.color[1])
+                    self.buffer[pos + 2] = int(self.calculateBrightness(i) * self.color[2])
+        if self.counter >= self.duration:
             self.status = True
         self.counter += 1
         return self.buffer[:self.length * 3:]

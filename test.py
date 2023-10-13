@@ -16,7 +16,8 @@ class JSONRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def parse_eff(self, json_data):
         global room
-        room.dev_list[json_data["dev"] - 1].add_eff(Wipe(room.dev_list[json_data["dev"] - 1], json_data["eff"]["start"], json_data["eff"]["stop"], json_data["eff"]["trail"], (255, 255, 255), json_data["eff"]["direction"], json_data["eff"]["duration"]))
+        #room.dev_list[json_data["dev"] - 1].add_eff(Wipe(room.dev_list[json_data["dev"] - 1], json_data["params"]["start"], json_data["params"]["stop"], json_data["params"]["trail"], (255, 255, 255), json_data["params"]["direction"], json_data["params"]["duration"]))
+        room.dev_list[json_data["dev"] - 1].add_eff(json_data["eff_id"], json_data["params"])
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
@@ -87,10 +88,14 @@ def run(server_class=http.server.HTTPServer, handler_class=JSONRequestHandler, p
 
 
 thread.start_new_thread(run, ())
-print("called init")
+print("called init")  
 room = Room()
+room.add_dev("192.168.1.121", 329)
 room.add_dev("192.168.1.134", 300)
-print("added device")
+room.add_dev("192.168.1.123", 329)
+room.add_dev("192.168.1.127", 329)
+
+print("added devices ")
 room.run()
 # try:
 #     while(True):
