@@ -1,31 +1,5 @@
+from eff_lib.effects import Effect
 import numpy as np
-#from transmitter import Transmitter
-import time
-
-
-# There are 2 approaches we can take for handling simultaneous events
-# One: we could make every effect a class and store the current state (frame) of each effect and just tick up the frames until done
-# Use this in a queue where we just call nextframe() on each effect until it is done and removed from the queue
-
-# Two: We could use multithreading where it waits for events and set
-# Ex: event = threading.Event()             event.set()
-
-
-
-# This class takes in a transmitter object (so that the buffer knows where to get written to)
-class Effect():
-    def __init__(self, transmitter):
-        self.status = False
-        self.counter = 0
-        self.transmitter = transmitter
-
-    def generateFrame(self):
-        raise NotImplementedError
-
-
-    def transmit(self, data):
-        # we are going to assume that the input data will be an array of ints [r_1, g_1, b_1, r_2, g_2, b_2, ...]
-        self.transmitter.transmit(tuple(data))
 
 
 class Wipe(Effect):
@@ -79,6 +53,3 @@ class Wipe(Effect):
         self.counter += 1
         return self.buffer[:self.length * 3:]
     
-    def transmit(self):
-        super().transmit(self.buffer)
-        return

@@ -2,7 +2,8 @@ import time
 import sacn
 from buffer import Buffer
 import numpy as np
-from effects import *
+from eff_lib.wipe import Wipe
+from eff_lib.solid import Solid
 
 def converter(data):
     return tuple(i.item() for i in data)
@@ -48,6 +49,9 @@ class Transmitter():
         if id == 1:
             color = (params["R"], params["G"], params["B"])
             self.eff_q.append(Wipe(self, params["start"], params["stop"], params["trail"], color, params["direction"], params["duration"]))
+        if id == 2:
+            color = (params["R"], params["G"], params["B"])
+            self.eff_q.append(Solid(self, params["start"], params["stop"], params["attack"], params["hold"], params["decay"], color))
 
 
     def gen_buff(self):

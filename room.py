@@ -1,6 +1,5 @@
 from transmitter import Transmitter
 import threading
-import concurrent.futures
 
 class Room():
     def __init__(self):
