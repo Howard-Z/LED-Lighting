@@ -17,3 +17,4 @@ class Effect():
     def generateFrame(self):
         raise NotImplementedError
 
+#TODO: in the other effects, implement the ability to change the start and stop positions

@@ -54,12 +54,14 @@ class Transmitter():
             self.eff_q.append(Solid(self, params["start"], params["stop"], params["attack"], params["hold"], params["decay"], color))
 
 
+#TODO: Fix the add function for adding 2 arrays not of equal length
     def gen_buff(self):
         self.buffer.buff_clear()
         if(len(self.eff_q) == 0):
             return False
         for i in range(len(self.eff_q)):
             if self.eff_q[i].status == False:
+                #this line in particular
                 self.buffer.buff = np.add(self.buffer.buff, self.eff_q[i].generateFrame())
         i = 0
         while i < len(self.eff_q):

@@ -43,7 +43,7 @@ class Wipe(Effect):
                     self.buffer[pos + 2] = int(self.calculateBrightness(i) * self.color[2])
             else:
                 pos = (self.length) * 3 - (pos2 - i * 3)
-                print(pos)
+                #print(pos)
                 if pos >= 0 and pos < ((self.length + self.trail) * 3) - 1:
                     self.buffer[pos] = int(self.calculateBrightness(i) * self.color[0])
                     self.buffer[pos + 1] = int(self.calculateBrightness(i) * self.color[1])

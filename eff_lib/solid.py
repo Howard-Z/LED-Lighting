@@ -23,9 +23,7 @@ class Solid(Effect):
         return self.counter/self.attack
 
     def dec_bri(self):
-        bri = 1 - (self.counter - self.attack - self.hold + 1)/self.decay
-        print(bri)
-        return bri
+        return 1 - (self.counter - self.attack - self.hold + 1)/self.decay
 
     def generateFrame(self):
         self.clearBuffer()
