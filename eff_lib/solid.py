@@ -6,7 +6,7 @@ class Solid(Effect):
         super().__init__(transmitter)
         self.start = start
         self.stop = stop
-        self.length = start = stop
+        self.length = stop - start
         self.attack = attack
         self.hold = hold
         self.decay = decay

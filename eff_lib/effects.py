@@ -9,6 +9,7 @@
 
 # This class takes in a transmitter object (so that the buffer knows where to get written to)
 class Effect():
+    #NOTE ALL EFFECTS MUST HAVE A START AND STOP ATTRIBUTE
     def __init__(self, transmitter):
         self.status = False
         self.counter = 0
